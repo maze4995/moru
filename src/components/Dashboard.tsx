@@ -40,6 +40,7 @@ import {
 import Editor from "./Editor";
 import CalendarView from "./CalendarView";
 import Settings from "./Settings";
+import TodaySchedule from "./TodaySchedule";
 const nav = [
   ["today", "오늘", LayoutDashboard],
   ["plans", "내 계획", FolderOpen],
@@ -586,6 +587,9 @@ export default function Dashboard() {
                       추가 <ArrowRight size={15} />
                     </button>
                   </form>
+                  <TodaySchedule tasks={tasks} plans={plans} zone={zone} clock={clock}
+                    onEdit={(task) => setEditor({ kind: "tasks", item: task })}
+                    onAdd={() => setEditor({ kind: "tasks" })} />
                   <div className="dashboard-columns">
                     <div>
                       <Group

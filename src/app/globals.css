@@ -1808,3 +1808,35 @@ dialog form > .error {
     scroll-behavior: auto !important;
   }
 }
+
+.today-schedule { margin-bottom: 24px; }
+.today-schedule .card-heading { align-items: center; gap: 12px; flex-wrap: wrap; }
+.today-schedule h2 { margin: 4px 0 0; }
+.schedule-source { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.schedule-layout { display: grid; grid-template-columns: minmax(240px, 340px) minmax(0, 1fr); gap: 28px; align-items: center; }
+.schedule-dial { min-width: 0; text-align: center; }
+.schedule-dial svg { width: 100%; max-width: 340px; display: block; margin: auto; }
+.dial-hour, .dial-caption { font-size: 12px; fill: var(--muted); }
+.dial-now { font-size: 32px; font-weight: 600; fill: var(--ink); font-variant-numeric: tabular-nums; }
+.schedule-total { font-size: 14px; font-weight: 600; margin: 0 0 12px; }
+.schedule-total span { display: block; color: var(--muted); font-size: 11px; font-weight: 400; margin-top: 4px; }
+.schedule-agenda { min-width: 0; }
+.schedule-agenda ol { list-style: none; padding: 4px; margin: 0; max-height: 330px; overflow-y: auto; }
+.schedule-entry { width: 100%; min-height: 72px; display: flex; align-items: flex-start; gap: 12px; padding: 12px; margin-bottom: 8px; text-align: left; }
+.schedule-entry > span:nth-child(2) { min-width: 0; flex: 1; }
+.schedule-entry b { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.schedule-title { display: block; overflow-wrap: anywhere; line-height: 1.5; margin: 2px 0; }
+.schedule-entry small { color: var(--muted); }
+.schedule-swatch { width: 8px; height: 28px; border-radius: 4px; flex: 0 0 8px; margin-top: 4px; }
+.schedule-note { font-size: 12px; color: var(--muted); margin: 14px 4px 0; line-height: 1.8; }
+.schedule-empty { padding: 20px 4px; }
+.schedule-empty h3 { margin: 0 0 8px; font-size: 16px; }
+.schedule-empty p { color: var(--muted); font-size: 13px; }
+.schedule-empty button, .schedule-error button { min-height: 44px; }
+@media (max-width: 700px) {
+  .schedule-layout { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .schedule-dial svg { max-width: 300px; }
+  .schedule-empty { text-align: center; padding: 12px 0; }
+  .schedule-agenda ol { max-height: 300px; }
+}
+

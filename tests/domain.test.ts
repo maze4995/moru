@@ -118,3 +118,48 @@ describe("calendar projection", () => {
     expect(events[1].allDay).toBe(false);
   });
 });
+
+import { daySchedule } from "../src/domain/day-schedule";
+import type { Task, Plan } from "../src/domain/model";
+describe("today circular schedule", () => {
+  const task = (id: string, startAt: string | null, endAt: string | null, patch: Partial<Task> = {}): Task => ({
+    ...blankTask, id, uid: "test", version: 1, updatedAt: "", title: id, startAt, endAt, ...patch,
+  });
+  it("clips midnight crossings and counts overlaps only once while assigning separate rings", () => {
+    const result = daySchedule([
+      task("overnight", "2026-10-06T23:00:00+09:00", "2026-10-07T02:00:00+09:00"),
+      task("overlap", "2026-10-07T01:00:00+09:00", "2026-10-07T03:00:00+09:00"),
+      task("ending-at-midnight", "2026-10-06T22:00:00+09:00", "2026-10-07T00:00:00+09:00"),
+      task("next-day", "2026-10-08T00:00:00+09:00", "2026-10-08T01:00:00+09:00"),
+    ], [], "2026-10-07", "Asia/Seoul");
+    expect(result.entries.map(e => e.task.id)).toEqual(["overnight", "overlap"]);
+    expect(result.entries[0].from).toBe(0);
+    expect(result.entries[0].to).toBeCloseTo(2 / 24);
+    expect(result.lanes).toBe(2);
+    expect(result.occupiedMinutes).toBe(180);
+  });
+  it("excludes deadline-only, deleted, held and candidate items but retains completed time", () => {
+    const start = "2026-10-07T09:00:00+09:00", end = "2026-10-07T10:00:00+09:00";
+    const candidate: Plan = { ...blankPlan, id: "candidate", title: "candidate", uid: "test", version: 1, updatedAt: "" };
+    const result = daySchedule([
+      task("deadline", null, null, { dueDate: "2026-10-07" }),
+      task("deleted", start, end, { deleted: true }),
+      task("held", start, end, { status: "보류" }),
+      task("cancelled", start, end, { status: "취소" }),
+      task("candidate", start, end, { planId: candidate.id }),
+      task("done", start, end, { status: "완료" }),
+    ], [candidate], "2026-10-07", "Asia/Seoul");
+    expect(result.entries.map(e => e.task.id)).toEqual(["done"]);
+  });
+  it("uses timezone day boundaries and real DST day lengths", () => {
+    const fullDay = task("dst", "2026-03-08T00:00:00-05:00", "2026-03-09T00:00:00-04:00");
+    const spring = daySchedule([fullDay], [], "2026-03-08", "America/New_York");
+    expect(spring.duration).toBe(23 * 3600000);
+    expect(spring.occupiedMinutes).toBe(23 * 60);
+    expect(spring.entries[0].to).toBe(1);
+    expect(daySchedule([], [], "2026-11-01", "America/New_York").duration).toBe(25 * 3600000);
+    const shifted = daySchedule([task("late", "2026-10-07T23:30:00Z", "2026-10-08T00:30:00Z")], [], "2026-10-08", "Asia/Seoul");
+    expect(shifted.entries[0].from).toBeCloseTo(8.5 / 24);
+  });
+});
+

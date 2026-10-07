@@ -25,24 +25,25 @@ export async function GET(req: Request) {
     )
       throw new HttpError(400, "조회 기간은 최대 93일입니다");
     const collection = admin().db.collection(`users/${user.uid}/tasks`);
+    const timedOnly = url.searchParams.get("timedOnly") === "true";
     const snapshots = await Promise.all([
-      collection
+      ...(!timedOnly ? [collection
         .where("deleted", "==", false)
         .where("dueDate", ">=", from.toISODate())
         .where("dueDate", "<", to.toISODate())
         .limit(501)
-        .get(),
+        .get()] : []),
       collection
         .where("deleted", "==", false)
         .where("startAt", "<", Timestamp.fromDate(to.toJSDate()))
         .where("endAt", ">", Timestamp.fromDate(from.toJSDate()))
         .limit(501)
         .get(),
-      collection
+      ...(!timedOnly ? [collection
         .where("deleted", "==", false)
         .where("startAt", "==", null)
         .limit(501)
-        .get(),
+        .get()] : []),
     ]);
     if (snapshots.some((s) => s.size > 500))
       throw new HttpError(
