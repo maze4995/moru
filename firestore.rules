@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function owner(uid) { return request.auth != null && request.auth.uid == uid && get(/databases/$(database)/documents/access/owner).data.uid == uid; }
+  function category(v) { return v in ['취업','자격증','학습','개인 프로젝트','생활']; }
+  function text(v,n) { return v is string && v.size() <= n; }
+  function realDate(v) { let p=v.split('-'); let y=int(p[0]); let m=int(p[1]); let d=int(p[2]); let leap=(y%400==0 || (y%4==0 && y%100!=0)); let days=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31]; return y>=1 && m>=1 && m<=12 && d>=1 && d<=days[m-1]; }
+  function date(v) { return v == null || (v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') && realDate(v)); }
+  function base(d,uid) { return d.uid == uid && text(d.title,200) && d.title.size()>0 && category(d.category) && text(d.notes,10000) && d.deleted is bool && d.updatedAt is timestamp && d.version is int && d.version>0; }
+  function task(d,uid) { return d.keys().hasAll(['uid','title','category','notes','deleted','updatedAt','version','planId','status','priority','dueDate','startAt','endAt','reminder']) && d.keys().hasOnly(['uid','title','category','notes','deleted','updatedAt','version','planId','status','priority','dueDate','startAt','endAt','reminder']) && base(d,uid) && d.status in ['할 일','진행 중','보류','완료','취소'] && d.priority in ['높음','보통','낮음'] && date(d.dueDate) && ((d.startAt == null && d.endAt == null) || (d.startAt is timestamp && d.endAt is timestamp && d.endAt>d.startAt)) && d.reminder is map && d.reminder.keys().hasAll(['enabled','basis','minutesBefore','deadlineTime']) && d.reminder.keys().hasOnly(['enabled','basis','minutesBefore','deadlineTime']) && d.reminder.enabled is bool && d.reminder.basis in ['deadline','start'] && d.reminder.minutesBefore is int && d.reminder.minutesBefore>=0 && d.reminder.minutesBefore<=43200 && d.reminder.deadlineTime is string && d.reminder.deadlineTime.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$') && (!d.reminder.enabled || (d.reminder.basis=='deadline' && d.dueDate!=null) || (d.reminder.basis=='start' && d.startAt!=null)) && (d.planId==null || (d.planId is string && get(/databases/$(database)/documents/users/$(uid)/plans/$(d.planId)).data.category==d.category && get(/databases/$(database)/documents/users/$(uid)/plans/$(d.planId)).data.deleted==false)); }
+  match /users/{uid}/tasks/{id} {
+   allow read: if owner(uid);
+   allow create: if owner(uid) && task(request.resource.data,uid) && request.resource.data.version==1;
+   allow update: if owner(uid) && resource.data.uid==uid && task(request.resource.data,uid) && request.resource.data.version==resource.data.version+1;
+   allow delete: if false;
+  }
+  // Plans and settings change through the authenticated server API only: it
+  // validates link URLs, real calendar dates, IANA zones and cross-task invariants.
+  match /users/{uid}/plans/{id} { allow read: if owner(uid); allow write: if false; }
+  match /users/{uid}/settings/{id} { allow read: if owner(uid); allow write: if false; }
+  match /users/{uid}/notifications/{id} { allow read: if owner(uid); allow write: if false; }
+  match /{document=**} { allow read, write: if false; }
+ }
+}

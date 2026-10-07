@@ -1,0 +1,49 @@
+{
+  "name": "moru-planner",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run tests/domain.test.ts tests/dots.test.ts",
+    "test:integration": "vitest run tests/integration.test.ts tests/dots.integration.test.ts",
+    "test:emulator": "node scripts/emulators.mjs --test",
+    "emulators": "node scripts/emulators.mjs",
+    "seed": "node scripts/run-tool.mjs seed",
+    "worker": "node scripts/run-tool.mjs worker",
+    "test:e2e": "playwright test",
+    "dots:mcp": "node scripts/run-tool.mjs dots-mcp",
+    "dots:prepare": "node scripts/prepare-dots.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "firebase": "12.19.0",
+    "firebase-admin": "14.5.0",
+    "lucide-react": "1.52.0",
+    "luxon": "3.7.2",
+    "next": "16.3.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.2",
+    "@playwright/test": "1.63.0",
+    "@types/luxon": "3.7.6",
+    "@types/node": "26.6.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "esbuild": "0.28.2",
+    "firebase-tools": "15.32.1",
+    "prettier": "3.9.9",
+    "typescript": "7.0.2",
+    "vitest": "5.0.3"
+  },
+  "type": "module",
+  "overrides": {
+    "@grpc/grpc-js": "^1.13.6",
+    "uuid": "^11.1.1"
+  }
+}
