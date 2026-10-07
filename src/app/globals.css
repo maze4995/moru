@@ -1840,3 +1840,10 @@ dialog form > .error {
   .schedule-agenda ol { max-height: 300px; }
 }
 
+
+.mcp-consent { max-width: 680px; margin: 48px auto; padding: 16px; }
+.mcp-consent .card { margin-top: 20px; }
+.mcp-consent button { min-height: 44px; margin-top: 12px; }
+.mcp-consent h1 { font-size: clamp(24px, 6vw, 34px); }
+.mcp-url, .mcp-consent p { overflow-wrap: anywhere; }
+@media (max-width: 480px) { .mcp-consent { margin: 12px auto; } .mcp-consent .actions { flex-direction: column; align-items: stretch; } }

@@ -171,3 +171,14 @@
 - 로컬 개발 서버/Emulator 응답 지연으로 로컬 전체 연동 검증은 미완료이며, 기존 Emulator 테스트를 새 실행 결과로 보고하지 않습니다.
 
 
+## 2026-10-07: 무료 HTTPS MCP 연결 준비
+
+- 단위 테스트: 23/23 통과 (프로토콜·도메인·기존 dots·운영 자격증명).
+- Firebase Auth/Firestore Emulator 통합 테스트: 37/37 통과. 직접 MCP 신규 10개 테스트 포함.
+- 본인 외 계정·비로그인·다른 Origin 차단, PKCE/resource/callback/client 결합, 인증 코드 동시 교환·재사용 차단, 만료·계정 비활성화·접근 해제, private_key_jwt 서명·audience·만료·jti 재사용 검증.
+- 읽기 전용 동의의 쓰기 차단, 도구 9개 검색, 실제 MCP 경유 등록·수정·중복 요청 방지 확인. 가상 데이터는 Emulator에만 생성.
+- 인증 문서는 소유자를 포함한 클라이언트 Firestore 접근 차단 확인.
+- TypeScript 및 Next.js 프로덕션 빌드 통과. npm audit --omit=dev: 운영 의존성 취약점 0개 (전체 개발 도구 포함 audit에는 기존 경고가 남음).
+- ChatGPT의 공개 CIMD를 실제 조회: stable client ID, 등록 callback, none/private_key_jwt 지원과 공개 JWKS 주소 확인.
+- MORU_MCP_ENABLED는 운영에서 아직 활성화하지 않음. 실제 dots OAuth 연결, PC 종료 상태 모바일 호출, 운영 토큰 갱신은 전환 승인 후 검증 필요.
+- 기존 localhost:3000 응답 지연 및 별도 서버 시작에 대한 자동 승인 거절로 로컬 승인 화면의 시각 검증은 아직 미완료.

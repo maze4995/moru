@@ -28,6 +28,7 @@ const descriptions: Record<DotsTool, string> = {
 };
 export function createDotsMcp(
   call: (tool: DotsTool, args: unknown) => Promise<Record<string, unknown>>,
+  oauth = false,
 ) {
   const server = new McpServer(
     { name: "moru-planner", version: "0.2.0" },
@@ -41,6 +42,7 @@ export function createDotsMcp(
         title: tool.replaceAll("_", " "),
         description: descriptions[tool],
         inputSchema: dotsInputs[tool],
+        ...(oauth ? { _meta: { securitySchemes: [{ type: "oauth2", scopes: writes ? ["moru:read", "moru:write"] : ["moru:read"] }] } } : {}),
         annotations: {
           readOnlyHint: !writes,
           destructiveHint: tool.includes("_update_"),

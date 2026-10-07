@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/client/firebase";
 import type { Settings as Preferences } from "@/domain/model";
 import DotsConnection from "./DotsConnection";
+import McpConnection from "./McpConnection";
 export default function Settings({
   settings,
   onSave,
@@ -238,6 +239,7 @@ export default function Settings({
           {message}
         </p>
       )}
+      <McpConnection />
       <DotsConnection zone={settings.timezone} />
       <section className="card full">
         <h2>개인용 공간</h2>

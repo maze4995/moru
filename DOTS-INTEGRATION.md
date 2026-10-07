@@ -102,3 +102,6 @@ MCP 클라이언트의 command에는 Node 실행 파일, args에는 위 스크�
 ## 테스트
 
 `npm test`, `npm run test:emulator`, `npm run test:e2e`, `npm run typecheck`, `npm run build`를 사용합니다. 로컬 MCP 계약 검증에는 SDK의 클라이언트/서버를 사용합니다. 실제 dots 대화 → OpenAI 터널 → 이 PC로 이어지는 종단 간 흐름은 본인 로그인과 외부 연결 설정을 마친 뒤 검증해야 합니다. 이번 연결 점검은 로컬 MCP → 실행 중인 Next.js API → Emulator까지 확인한 것이며, 실제 dots의 호출 검증을 대신하지 않습니다.
+
+## PC 없이 사용하는 직접 연결
+무료 Vercel 구성을 위한 OAuth + HTTPS MCP 구현과 전환 절차는 [DOTS-DIRECT-CONNECTION.md](./DOTS-DIRECT-CONNECTION.md)를 참고하세요. 운영 활성화와 실제 dots 검증 전까지 기존 터널 안내는 계속 유효합니다.

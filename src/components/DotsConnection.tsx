@@ -49,7 +49,7 @@ export default function DotsConnection({ zone }: { zone: string }) {
   return (
     <section className="card full">
       <span className="eyebrow">대화로 관리하기</span>
-      <h2>dots · 모루 연결</h2>
+      <h2>dots · 기존 PC 터널 연결</h2>
       <p>
         명확한 등록·수정·완료 요청은 즉시 반영합니다. 대상이나 날짜가 모호할
         때만 다시 확인합니다.
