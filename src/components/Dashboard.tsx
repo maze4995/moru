@@ -41,6 +41,11 @@ import Editor from "./Editor";
 import CalendarView from "./CalendarView";
 import Settings from "./Settings";
 import TodaySchedule from "./TodaySchedule";
+import DashboardPlans from "./DashboardPlans";
+import {
+  dashboardPeriod,
+  type DashboardPeriod,
+} from "@/domain/dashboard-period";
 const nav = [
   ["today", "오늘", LayoutDashboard],
   ["plans", "내 계획", FolderOpen],
@@ -62,6 +67,7 @@ export default function Dashboard() {
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
     [tab, setTab] = useState<Tab>("today"),
+    [period, setPeriod] = useState<DashboardPeriod>("today"),
     [tasks, setTasks] = useState<Task[]>([]),
     [plans, setPlans] = useState<Plan[]>([]),
     [notifications, setNotifications] = useState<any[]>([]),
@@ -228,8 +234,9 @@ export default function Dashboard() {
       .filter((t) => t.dueDate && t.dueDate > today && t.dueDate <= week.end)
       .sort((a, b) => a.dueDate!.localeCompare(b.dueDate!)),
     high = open.filter((t) => t.priority === "높음"),
-    ongoing = plans.filter((p) => !p.deleted && p.status === "진행 중"),
     detail = plans.find((p) => p.id === selectedPlan);
+  const periodLabel = period === "today" ? "오늘" : "이번 주";
+  const periodView = dashboardPeriod(tasks, plans, zone, clock, period);
   function TaskRow({
     task: t,
     compact = false,
@@ -450,7 +457,9 @@ export default function Dashboard() {
                   </span>
                   <h1>
                     {tab === "today"
-                      ? "오늘, 한 걸음"
+                      ? period === "today"
+                        ? "오늘, 한 걸음"
+                        : "이번 주, 한 걸음"
                       : nav.find((n) => n[0] === tab)?.[1]}
                     <span className="heading-dot">.</span>
                   </h1>
@@ -458,7 +467,9 @@ export default function Dashboard() {
                     {
                       {
                         today:
-                          "지금 할 일에 집중하고, 다음 걸음을 가볍게 준비해요.",
+                          period === "today"
+                            ? "지금 할 일에 집중하고, 다음 걸음을 가볍게 준비해요."
+                            : "한 주의 계획과 마감을 분야별로 살펴보세요.",
                         plans: "후보부터 완료까지, 내 목표가 자라는 곳.",
                         tasks: "작은 행동을 모아 나만의 속도로 이어가세요.",
                         calendar:
@@ -520,181 +531,184 @@ export default function Dashboard() {
               )}
               {tab === "today" && (
                 <>
-                  <div className="summary-grid">
-                    <div className="summary-card">
-                      <span>
-                        <Sun size={17} />
-                        오늘 할 일
-                      </span>
-                      <strong>
-                        {scheduledToday.length}
-                        <small>개의 작은 행동</small>
-                      </strong>
-                      <div className="summary-line green-line" />
+                  <div className="dashboard-period-bar">
+                    <div
+                      className="period-toggle"
+                      role="group"
+                      aria-label="대시보드 기간"
+                    >
+                      {(["today", "week"] as const).map((value) => (
+                        <button
+                          key={value}
+                          aria-pressed={period === value}
+                          aria-controls="dashboard-period-content"
+                          onClick={() => setPeriod(value)}
+                        >
+                          {value === "today" ? "오늘" : "이번 주"}
+                        </button>
+                      ))}
                     </div>
-                    <div className="summary-card">
-                      <span>
-                        <Flag size={17} />
-                        이번 주 남은 마감
-                      </span>
-                      <strong>
-                        {upcoming.length}
-                        <small>미리 확인해요</small>
-                      </strong>
-                      <div className="summary-line amber-line" />
-                    </div>
-                    <div className="summary-card">
-                      <span>
-                        <Target size={17} />
-                        진행 중인 계획
-                      </span>
-                      <strong>
-                        {ongoing.length}
-                        <small>나만의 방향</small>
-                      </strong>
-                      <div className="summary-line blue-line" />
-                    </div>
+                    <p>
+                      {periodView.start.toFormat("M월 d일")}{" "}
+                      {period === "week"
+                        ? `– ${periodView.end.minus({ days: 1 }).toFormat("M월 d일")} · 월–일`
+                        : now.setLocale("ko").toFormat("cccc")}{" "}
+                      <span>· {zone}</span>
+                    </p>
                   </div>
-                  <form
-                    className="quick-add"
-                    onSubmit={async (e) => {
-                      e.preventDefault();
-                      if (!quick.trim() || saving) return;
-                      setSaving(true);
-                      try {
-                        await save("tasks", {
-                          ...blankTask,
-                          title: quick,
-                          dueDate: today,
-                        });
-                        setQuick("");
-                      } catch (err) {
-                        setError((err as Error).message);
-                      } finally {
-                        setSaving(false);
-                      }
-                    }}
-                  >
-                    <Plus size={20} />
-                    <input
-                      aria-label="빠른 할 일 제목"
-                      maxLength={200}
-                      value={quick}
-                      onChange={(e) => setQuick(e.target.value)}
-                      placeholder="오늘까지 할 일, 가볍게 적어보세요"
-                    />
-                    <button disabled={saving || !quick.trim()}>
-                      추가 <ArrowRight size={15} />
-                    </button>
-                  </form>
-                  <TodaySchedule tasks={tasks} plans={plans} zone={zone} clock={clock}
-                    onEdit={(task) => setEditor({ kind: "tasks", item: task })}
-                    onAdd={() => setEditor({ kind: "tasks" })} />
-                  <div className="dashboard-columns">
-                    <div>
-                      <Group
-                        title="오늘 할 일"
-                        items={scheduledToday}
-                        empty="오늘 예정된 할 일이 없습니다. 작은 행동 하나를 정해보세요."
-                      />
-                      {overdue.length > 0 && (
-                        <Group
-                          title="마감이 지났어요"
-                          items={overdue}
-                          tone="overdue-group"
-                          empty=""
-                        />
-                      )}
-                      {missed.length > 0 && (
-                        <Group
-                          title="지난 실행 일정 · 직접 조정하기"
-                          items={missed}
-                          empty=""
-                        />
-                      )}
-                      <Group
-                        title="이번 주 다가오는 마감"
-                        items={upcoming}
-                        empty="이번 주 남은 마감이 없습니다."
-                      />
+                  <div id="dashboard-period-content">
+                    <div className="summary-grid">
+                      <div className="summary-card">
+                        <span>
+                          <Sun size={17} />
+                          {periodLabel} 할 일
+                        </span>
+                        <strong>
+                          {periodView.items.length}
+                          <small>개의 작은 행동</small>
+                        </strong>
+                        <div className="summary-line green-line" />
+                      </div>
+                      <div className="summary-card">
+                        <span>
+                          <Flag size={17} />
+                          {period === "today"
+                            ? "이번 주 남은 마감"
+                            : "이번 주 마감"}
+                        </span>
+                        <strong>
+                          {period === "today"
+                            ? upcoming.length
+                            : periodView.deadlines.length}
+                          <small>미리 확인해요</small>
+                        </strong>
+                        <div className="summary-line amber-line" />
+                      </div>
+                      <div className="summary-card">
+                        <span>
+                          <Target size={17} />
+                          {periodLabel}의 계획
+                        </span>
+                        <strong>
+                          {periodView.planCount}
+                          <small>날짜 미정 포함</small>
+                        </strong>
+                        <div className="summary-line blue-line" />
+                      </div>
                     </div>
-                    <div>
-                      <section className="card priority-card">
-                        <div className="card-heading">
-                          <h2>
-                            <Flag size={17} />
-                            내가 정한 우선순위
-                          </h2>
-                        </div>
-                        <p className="muted small">
-                          ‘높음’으로 표시한 할 일이에요.
-                        </p>
-                        {high.length ? (
-                          high.map((t) => (
-                            <TaskRow key={t.id} task={t} compact />
-                          ))
-                        ) : (
-                          <p className="empty">집중할 일을 골라보세요.</p>
+                    <form
+                      className="quick-add"
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (!quick.trim() || saving) return;
+                        setSaving(true);
+                        try {
+                          await save("tasks", {
+                            ...blankTask,
+                            title: quick,
+                            dueDate: today,
+                          });
+                          setQuick("");
+                        } catch (err) {
+                          setError((err as Error).message);
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                    >
+                      <Plus size={20} />
+                      <input
+                        aria-label="빠른 할 일 제목"
+                        maxLength={200}
+                        value={quick}
+                        onChange={(e) => setQuick(e.target.value)}
+                        placeholder="오늘까지 할 일, 가볍게 적어보세요"
+                      />
+                      <button disabled={saving || !quick.trim()}>
+                        추가 <ArrowRight size={15} />
+                      </button>
+                    </form>
+                    {period === "today" && (
+                      <TodaySchedule
+                        tasks={tasks}
+                        plans={plans}
+                        zone={zone}
+                        clock={clock}
+                        onEdit={(task) =>
+                          setEditor({ kind: "tasks", item: task })
+                        }
+                        onAdd={() => setEditor({ kind: "tasks" })}
+                      />
+                    )}
+                    <DashboardPlans
+                      groups={periodView.groups}
+                      label={periodLabel}
+                      onOpen={(plan) => {
+                        setTab("plans");
+                        setSelectedPlan(plan.id);
+                      }}
+                      onCategory={(category) => {
+                        setTab("plans");
+                        setSelectedPlan(null);
+                        setFilter(category);
+                        setStateFilter("전체");
+                      }}
+                    />
+                    <div className="dashboard-columns">
+                      <div>
+                        <Group
+                          title={`${periodLabel} 할 일`}
+                          items={periodView.items}
+                          empty={`${periodLabel} 예정된 할 일이 없습니다. 작은 행동 하나를 정해보세요.`}
+                        />
+                        {overdue.length > 0 && (
+                          <Group
+                            title="마감이 지났어요"
+                            items={overdue}
+                            tone="overdue-group"
+                            empty=""
+                          />
                         )}
-                      </section>
-                      <section className="card next-card">
-                        <div className="card-heading">
-                          <h2>계획의 다음 행동</h2>
-                          <button
-                            className="text-button"
-                            onClick={() => setTab("plans")}
-                          >
-                            전체 <ArrowUpRight size={14} />
-                          </button>
-                        </div>
-                        {ongoing.length ? (
-                          ongoing.map((p) => {
-                            const list = tasks.filter(
-                                (t) =>
-                                  t.planId === p.id &&
-                                  !t.deleted &&
-                                  t.status !== "취소",
-                              ),
-                              next = list.find((t) => active(t));
-                            return (
-                              <button
-                                className="next-plan"
-                                key={p.id}
-                                onClick={() => {
-                                  setTab("plans");
-                                  setSelectedPlan(p.id);
-                                }}
-                              >
-                                <span className="category">{p.category}</span>
-                                <b>{p.title}</b>
-                                <span>
-                                  {next
-                                    ? `다음 · ${next.title}`
-                                    : "다음 할 일을 정해보세요"}
-                                </span>
-                                {list.length > 0 && (
-                                  <small>
-                                    {
-                                      list.filter((t) => t.status === "완료")
-                                        .length
-                                    }
-                                    /{list.length}개 완료
-                                  </small>
-                                )}
-                              </button>
-                            );
-                          })
-                        ) : (
-                          <p className="empty">진행 중인 계획이 없습니다.</p>
+                        {missed.length > 0 && (
+                          <Group
+                            title="지난 실행 일정 · 직접 조정하기"
+                            items={missed}
+                            empty=""
+                          />
                         )}
-                      </section>
-                      <div className="quiet-note">
-                        <span>✳</span>
-                        <p>
-                          모든 일을 오늘 끝내지 않아도 괜찮아요.
-                          <br />
-                          미완료 일정은 직접 조정할 수 있어요.
-                        </p>
+                        <Group
+                          title="이번 주 다가오는 마감"
+                          items={upcoming}
+                          empty="이번 주 남은 마감이 없습니다."
+                        />
+                      </div>
+                      <div>
+                        <section className="card priority-card">
+                          <div className="card-heading">
+                            <h2>
+                              <Flag size={17} />
+                              내가 정한 우선순위
+                            </h2>
+                          </div>
+                          <p className="muted small">
+                            ‘높음’으로 표시한 할 일이에요.
+                          </p>
+                          {high.length ? (
+                            high.map((t) => (
+                              <TaskRow key={t.id} task={t} compact />
+                            ))
+                          ) : (
+                            <p className="empty">집중할 일을 골라보세요.</p>
+                          )}
+                        </section>
+                        <div className="quiet-note">
+                          <span>✳</span>
+                          <p>
+                            모든 일을 오늘 끝내지 않아도 괜찮아요.
+                            <br />
+                            미완료 일정은 직접 조정할 수 있어요.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>

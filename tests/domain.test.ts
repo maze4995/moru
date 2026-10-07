@@ -163,3 +163,129 @@ describe("today circular schedule", () => {
   });
 });
 
+import { dashboardPeriod } from "../src/domain/dashboard-period";
+
+describe("dashboard today/week selection", () => {
+  const meta = { uid: "owner", version: 1, updatedAt: "2026-10-07T00:00:00Z" };
+  const p = (id: string, patch: Partial<Plan> = {}): Plan => ({
+    ...blankPlan,
+    ...meta,
+    id,
+    title: id,
+    status: "진행 중",
+    ...patch,
+  });
+  const t = (id: string, patch: Partial<Task> = {}): Task => ({
+    ...blankTask,
+    ...meta,
+    id,
+    title: id,
+    ...patch,
+  });
+  const clock = Date.parse("2026-10-07T03:00:00Z");
+  it("uses Monday through Sunday, excludes next Monday, and counts a deadline plus execution once", () => {
+    const tasks = [
+      t("mon", { dueDate: "2026-10-05" }),
+      t("sun", { dueDate: "2026-10-11" }),
+      t("next", { dueDate: "2026-10-12" }),
+      t("today", {
+        dueDate: "2026-10-07",
+        startAt: "2026-10-07T02:00:00Z",
+        endAt: "2026-10-07T03:00:00Z",
+      }),
+    ];
+    expect(
+      dashboardPeriod(tasks, [], "Asia/Seoul", clock, "week").items.map(
+        (x) => x.id,
+      ),
+    ).toEqual(["mon", "today", "sun"]);
+    expect(
+      dashboardPeriod(tasks, [], "Asia/Seoul", clock, "today").items.map(
+        (x) => x.id,
+      ),
+    ).toEqual(["today"]);
+  });
+  it("uses exclusive midnight boundaries and changes execution dates with timezone, not date-only deadlines", () => {
+    const tasks = [
+      t("ends-at-start", {
+        startAt: "2026-10-06T14:00:00Z",
+        endAt: "2026-10-06T15:00:00Z",
+      }),
+      t("seoul-today", {
+        startAt: "2026-10-06T15:00:00Z",
+        endAt: "2026-10-06T16:00:00Z",
+      }),
+      t("date-only", { dueDate: "2026-10-07" }),
+      t("tomorrow", {
+        startAt: "2026-10-07T15:00:00Z",
+        endAt: "2026-10-07T16:00:00Z",
+      }),
+    ];
+    expect(
+      dashboardPeriod(tasks, [], "Asia/Seoul", clock, "today").items.map(
+        (x) => x.id,
+      ),
+    ).toEqual(["date-only", "seoul-today"]);
+    expect(
+      dashboardPeriod(tasks, [], "UTC", clock, "today").items.map((x) => x.id),
+    ).toEqual(["date-only", "tomorrow"]);
+    expect(tasks[2].startAt).toBeNull();
+  });
+  it("groups all five categories, includes dated and unscheduled ongoing plans, excludes candidates and inactive work", () => {
+    const plans = [
+      p("target", { category: "취업", targetDate: "2026-10-07" }),
+      p("linked", { category: "생활" }),
+      p("undated", { category: "자격증" }),
+      p("future", { targetDate: "2026-11-01" }),
+      p("candidate", { status: "검토 중", targetDate: "2026-10-07" }),
+      p("deleted", { deleted: true }),
+      p("held", { status: "보류" }),
+    ];
+    const tasks = [
+      t("linked-task", {
+        planId: "linked",
+        dueDate: "2026-10-07",
+        category: "생활",
+      }),
+      t("candidate-task", { planId: "candidate", dueDate: "2026-10-07" }),
+      t("done", { status: "완료", dueDate: "2026-10-07" }),
+      t("paused", { status: "보류", dueDate: "2026-10-07" }),
+      t("standalone", { dueDate: "2026-10-07" }),
+    ];
+    const view = dashboardPeriod(tasks, plans, "Asia/Seoul", clock, "today");
+    expect(view.groups.map((g) => g.category)).toEqual([
+      "취업",
+      "자격증",
+      "학습",
+      "개인 프로젝트",
+      "생활",
+    ]);
+    expect(view.groups.flatMap((g) => g.plans.map((x) => x.plan.id))).toEqual([
+      "target",
+      "undated",
+      "linked",
+    ]);
+    expect(view.groups[1].plans[0].undated).toBe(true);
+    expect(view.items.map((x) => x.id)).toEqual(["linked-task", "standalone"]);
+  });
+  it("handles a 25-hour DST day without including the next day", () => {
+    const view = dashboardPeriod(
+      [
+        t("last-hour", {
+          startAt: "2026-11-02T04:00:00Z",
+          endAt: "2026-11-02T05:00:00Z",
+        }),
+        t("next-day", {
+          startAt: "2026-11-02T05:00:00Z",
+          endAt: "2026-11-02T06:00:00Z",
+        }),
+      ],
+      [],
+      "America/New_York",
+      Date.parse("2026-11-01T12:00:00Z"),
+      "today",
+    );
+    expect(view.end.diff(view.start, "hours").hours).toBe(25);
+    expect(view.items.map((x) => x.id)).toEqual(["last-hour"]);
+  });
+});
