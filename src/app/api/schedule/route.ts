@@ -37,6 +37,8 @@ export async function GET(req: Request) {
         .where("deleted", "==", false)
         .where("startAt", "<", Timestamp.fromDate(to.toJSDate()))
         .where("endAt", ">", Timestamp.fromDate(from.toJSDate()))
+        .orderBy("startAt", "asc")
+        .orderBy("endAt", "asc")
         .limit(501)
         .get(),
       ...(!timedOnly ? [collection
@@ -62,3 +64,4 @@ export async function GET(req: Request) {
     return failure(e);
   }
 }
+
