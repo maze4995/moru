@@ -1,6 +1,6 @@
 # 운영 배포 상태
 
-2026-10-07 기준 소스는 `https://github.com/maze4995/moru`의 `main`에 게시했습니다. 모루 전용 Firebase Spark 프로젝트와 웹 앱을 생성했습니다. Vercel Hobby 배포는 진행 중입니다. 현재 로컬 앱과 dots 터널은 `demo-moru` Emulator를 사용합니다.
+2026-10-07 기준 소스는 `https://github.com/maze4995/moru`의 `main`에 게시했습니다. 운영 주소는 https://moru-nine.vercel.app 입니다. 모루 전용 Firebase Spark와 Vercel Hobby를 사용합니다. 현재 로컬 앱과 dots 터널은 `demo-moru` Emulator를 사용하며 운영 데이터로 자동 전환되지 않습니다.
 
 ## 배포 방식 선택
 
@@ -31,6 +31,12 @@
 | `APP_ORIGIN` | 실제 배포 HTTPS origin, 경로 없이 지정 |
 | `SCHEDULER_ENABLED` | 상시 작업자 준비 전 `false` |
 | `EMAIL_MODE` | 기본 `test` |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | 전용 서비스 계정의 JSON 전체, 서버 Secret에만 저장 |
+| `NODE_OPTIONS` | Vercel Node 22에서 `--experimental-require-module` |
+
+Vercel은 기본적으로 ESM의 `require()`를 비활성화합니다. 현재 Firebase Admin의 `jwks-rsa`/`jose` 의존성이 이 기능을 요구하므로 위 옵션이 없으면 빌드는 성공해도 API가 시작 중 500으로 실패합니다. [공식 런타임 설정](https://vercel.com/docs/functions/runtimes/node-js/advanced-node-configuration)을 따릅니다.
+
+`firestore.indexes.json`의 복합 색인 6개를 사용합니다. `status + __name__`, `reminder.enabled + __name__`의 같은 방향 정렬은 기본 단일 필드 색인이 제공하므로 중복 정의하지 않습니다. [Firestore 색인 설명](https://firebase.google.com/docs/firestore/query-data/index-overview).
 
 운영에는 `FIRESTORE_EMULATOR_HOST`, `FIREBASE_AUTH_EMULATOR_HOST`를 설정하지 않습니다. 서버 인증은 호스팅의 안전한 비밀 저장소 또는 서비스 계정 신원을 사용합니다. JSON 키를 소스, 공개 환경변수, 사용자 Firestore 문서, 채팅에 넣지 않습니다.
 
@@ -48,6 +54,9 @@ MCP 어댑터는 기본적으로 loopback HTTP로 로컬 앱에 연결합니다.
 - TypeScript 검사와 Next.js 프로덕션 빌드 통과.
 - 게시할 파일에서 현재 연결 키와 개인 터널 식별자 검사 통과.
 - 이전 Emulator·모바일 검증 범위는 `TEST-RESULTS.md` 참조.
-- 실제 운영 로그인, Rules/인덱스 배포, 운영 데이터 유지, 상시 예약 실행은 아직 미검증입니다.
+- 운영 Firebase에 Google 로그인, 본인 UID 정책, Security Rules, 복합 색인 6개를 적용했습니다.
+- 운영 API의 비로그인/잘못된 토큰 401, 잘못된 Origin 403, 비로그인 Firestore 조회 403을 확인했습니다.
+- 운영 UI에서 가상 계획·할 일 저장, 완료·재개·보류·날짜 변경, 새로고침 후 날짜와 실행 시간 유지를 확인했습니다. 자세한 최신 검증 상태는 `TEST-RESULTS.md`를 참고하세요.
+- Google Calendar OAuth, 이메일 실발송, 상시 예약 실행, dots의 운영 연결은 아직 설정하지 않았습니다. 웹을 닫은 상태의 예약 알림이 완성된 상태가 아닙니다.
 
 공식 안내: [Firebase Admin 설정](https://firebase.google.com/docs/admin/setup), [App Hosting 비용](https://firebase.google.com/docs/app-hosting/costs), [Vercel Hobby](https://vercel.com/docs/plans/hobby).

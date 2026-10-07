@@ -50,7 +50,9 @@ export async function api(path: string, body?: unknown) {
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
-  const data = await res.json();
+  const data = await res.json().catch(() => {
+    throw new Error("서버 응답을 받지 못했습니다. 잠시 후 새로고침하고 다시 시도하세요.");
+  });
   if (!res.ok) throw new Error(data.error || "저장하지 못했습니다");
   return data;
 }

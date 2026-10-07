@@ -2,6 +2,19 @@
 
 검증일: 2026-10-07 (Asia/Seoul). 실제 Windows / Node 22.22.0 / Java 21 / 설치된 Chrome에서 실행했습니다.
 
+## 운영 Firebase·Vercel 검증 (2026-10-07)
+
+- 운영 주소: https://moru-nine.vercel.app, GitHub `maze4995/moru` main. Firebase Spark / Vercel Hobby. 결제 연결 없음.
+- Google Authentication, 운영 도메인, 본인 UID의 `access/owner`, 서버 OWNER_UID를 설정했습니다. 서비스 계정은 전용 프로젝트의 Cloud Datastore 사용자와 Firebase 인증 뷰어 역할을 사용합니다. JSON은 Vercel Production Secret으로 사용자가 저장했으며 소스에 포함하지 않았습니다.
+- Security Rules 게시와 필요한 복합 색인 6개 사용 설정을 확인했습니다. 기본 단일 필드 색인과 중복되는 2개 정의를 제거했습니다.
+- 실제 Vercel에서 Firebase Admin import가 `ERR_REQUIRE_ESM`으로 실패한 원인을 확인했습니다. Vercel 공식 `NODE_OPTIONS=--experimental-require-module` 설정으로 수정했습니다. 로컬에서 옵션 off의 동일 실패와 on의 import 성공을 재현했습니다.
+- 비로그인 `/api/status`, `/api/data`: 401. 잘못된 Bearer 토큰: 401. 잘못된 Origin의 POST: 403. 비로그인 Firestore 소유자 문서 조회: 403.
+- 본인 로그인 상태에서 가상 계획과 연결 할 일 생성, 완료·재개·보류·일정 수정 성공. 새로고침 후 마감 `2026-10-10`과 실행 `2026-10-08 14:00–15:00 Asia/Seoul`, 메모가 유지됨을 확인했습니다.
+- 실제 배포 UI의 390×844 뷰포트에서 가로 넘침 없음, 하단 메뉴 접근, 편집 창 저장 버튼이 화면 안에 표시됨을 확인했습니다. 실기기 검증은 아닙니다.
+- 최신 `npm run typecheck`, `npm test` 16/16 통과. 과거 Emulator 27개 및 전체 모바일 자동 테스트는 이번 배포에서 재실행하지 않았습니다. 다른 실제 Google 계정을 이용한 차단은 미검증이며 해당 분기는 과거 Emulator 테스트로 검증했습니다.
+- 운영 dots는 설정 없음으로 503, Calendar OAuth 미설정, 이메일 테스트 모드, 서버 예약 실행 꺼짐을 확인했습니다. 실제 이메일 발송·상시 알림·운영 dots 대화는 검증하지 않았습니다.
+- 재로그인 및 검증용 데이터 삭제·복구는 후속 확인 중입니다. 아래 항목들은 각 시점의 이전 기록입니다.
+
 ## 실제 개인 터널·플러그인 연결 확인 (2026-10-07)
 
 - 사용자가 본인 Windows 계정의 일반 PowerShell에서 `Start-DotsTunnel.ps1`을 실행했습니다. DPAPI 암호화 키 복호화와 실제 터널 프로세스 기동 성공.
