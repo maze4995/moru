@@ -1,10 +1,10 @@
 # 운영 배포 상태
 
-2026-10-07 기준 소스는 `https://github.com/maze4995/moru`의 `main`에 게시했습니다. 실제 운영 Firebase 프로젝트와 호스팅은 아직 생성하지 않았습니다. 현재 로컬 앱과 dots 터널은 `demo-moru` Emulator를 사용합니다.
+2026-10-07 기준 소스는 `https://github.com/maze4995/moru`의 `main`에 게시했습니다. 모루 전용 Firebase Spark 프로젝트와 웹 앱을 생성했습니다. Vercel Hobby 배포는 진행 중입니다. 현재 로컬 앱과 dots 터널은 `demo-moru` Emulator를 사용합니다.
 
 ## 배포 방식 선택
 
-- Vercel Hobby + Firebase Spark: 개인용 무료 한도로 시작할 수 있습니다. Google 외부 호스트에서 Firebase Admin을 인증할 서버 자격증명 설정이 필요합니다. 현재 코드는 Application Default Credentials를 사용합니다. 서비스 계정 키 또는 신원 연동을 구성한 뒤 배포해야 합니다.
+- Vercel Hobby + Firebase Spark: 개인용 무료 한도로 시작할 수 있습니다. Google 외부 호스트에서 Firebase Admin을 인증할 서버 자격증명 설정이 필요합니다. 기본은 Application Default Credentials이며, Vercel에서는 서버 전용 `FIREBASE_SERVICE_ACCOUNT_JSON` 비밀 환경변수도 지원합니다. 자격증명의 프로젝트 일치 여부를 검증하며 형식 오류에 원문을 노출하지 않습니다.
 - Firebase App Hosting: Blaze 결제 연결이 필요합니다. Cloud Run, 빌드, 저장소, 네트워크, 비밀 저장소 등 사용량에 따라 비용이 발생할 수 있습니다. 전용 서비스 계정과 Application Default Credentials를 사용할 수 있습니다.
 
 외부 프로젝트 생성, 새로운 접근 권한, 결제 연결은 소유자 확인 후 진행합니다. 상시 예약 작업은 웹 배포만으로 활성화되지 않습니다.
@@ -38,13 +38,13 @@ Calendar의 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `
 
 ## dots와 데이터 전환
 
-현재 MCP 어댑터는 loopback HTTP origin만 허용하며 로컬 Emulator에 연결합니다. 웹 앱을 배포해도 dots가 운영 데이터로 자동 전환되지 않습니다. 운영 전환 시 정확한 배포 origin만 허용하는 연결 정책, 서버 전용 키, 운영 소유자의 dots 접근 허용을 함께 구성하고 실제 대화에서 검증해야 합니다. 기존 개인 터널 방식은 PC와 터널 프로세스가 켜져 있어야 합니다.
+MCP 어댑터는 기본적으로 loopback HTTP로 로컬 앱에 연결합니다. `MORU_DOTS_PRODUCTION_ORIGIN`과 `MORU_DOTS_PRODUCTION_TOKEN`을 함께 설정하면 명시한 단일 HTTPS origin으로 연결합니다. 운영 origin만 있고 키가 없는 경우 로컬 연결로 대체하지 않고 시작을 거절합니다. 웹 앱을 배포해도 dots가 운영 데이터로 자동 전환되지 않습니다. 운영 전환 시 운영 origin과 서버 전용 키, 운영 소유자의 dots 접근 허용을 함께 구성하고 실제 대화에서 검증해야 합니다. 기존 개인 터널 방식은 PC와 터널 프로세스가 켜져 있어야 합니다.
 
 가상 데모 데이터와 테스트 계정은 운영으로 복사하지 않습니다. 로컬 환경파일과 터널 설정은 공개 저장소에서 제외합니다.
 
 ## 이번 게시 전 확인
 
-- 단위·MCP 테스트 14/14 통과.
+- 단위·MCP·운영 연결 경계 테스트 16/16 통과.
 - TypeScript 검사와 Next.js 프로덕션 빌드 통과.
 - 게시할 파일에서 현재 연결 키와 개인 터널 식별자 검사 통과.
 - 이전 Emulator·모바일 검증 범위는 `TEST-RESULTS.md` 참조.

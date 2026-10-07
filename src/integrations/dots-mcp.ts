@@ -76,20 +76,25 @@ export function createDotsMcp(
   return server;
 }
 export class BridgeError extends Error {}
-export function createBridgeCall(origin: string, token: string) {
+export function createBridgeCall(origin: string, token: string, trustedProductionOrigin?: string) {
   const url = new URL(origin);
+  const local = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  // Production is opt-in through server configuration, never through tool input.
+  const trusted = trustedProductionOrigin ? new URL(trustedProductionOrigin) : null;
+  const production = trusted &&
+    trusted.href === `${trusted.origin}/` &&
+    trusted.origin === url.origin &&
+    url.protocol === "https:" && !local &&
+    !/^[\d.]+$/.test(url.hostname) && !url.hostname.includes(":");
   if (
-    !(
-      ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) &&
-      url.protocol === "http:"
-    ) ||
+    !((local && url.protocol === "http:" && !trusted) || production) ||
     url.username ||
     url.password ||
     url.pathname !== "/" ||
     url.search ||
     url.hash
   )
-    throw new Error("dots 로컬 연결은 loopback HTTP origin만 허용합니다");
+    throw new Error("dots 연결은 로컬 HTTP 또는 명시적으로 지정한 운영 HTTPS origin만 허용합니다");
   if (!/^[A-Za-z0-9_-]{43,128}$/.test(token))
     throw new Error("dots 서버 연결 키 설정이 필요합니다");
   return async (

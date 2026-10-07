@@ -33,7 +33,7 @@ OpenAI dots가 모루의 MCP 도구를 호출해 계획과 할 일을 조회·�
          → loopback 모루 API → 소유자·접근 허용·입력 검증 → Firestore
 ```
 
-- MCP 어댑터는 `http://localhost`, `http://127.0.0.1`, `http://[::1]`의 지정 origin만 사용합니다. 다른 호스트나 리디렉션으로 연결 키를 보내지 않습니다.
+- MCP 어댑터의 기본은 `http://localhost`, `http://127.0.0.1`, `http://[::1]`입니다. 운영 연결은 `MORU_DOTS_PRODUCTION_ORIGIN`과 별도 `MORU_DOTS_PRODUCTION_TOKEN`을 함께 설정해야 합니다. 지정한 단일 HTTPS origin에만 키를 보내며 리디렉션은 거절합니다. 키가 빠지면 로컬로 대체하지 않습니다. 운영 설정 전에는 기존 로컬 데이터를 계속 사용합니다.
 - 연결 키는 서버 `.env.local`에만 저장하며 MCP 모델 인수, 브라우저, 사용자 접근 가능 Firestore 문서, 로그에 넣지 않습니다. `.env.local`과 작업 폴더의 OS 접근은 본인과 필요한 로컬 실행 계정으로 제한하세요. Windows에서는 파일 생성의 POSIX mode만으로 ACL 보호가 보장되지 않습니다.
 - 서버 키가 있어도 Firebase로 로그인한 소유자가 앱 설정에서 접근을 허용하기 전에는 도구가 동작하지 않습니다.
 - 모든 호출에서 서버 키, 연결 허용 상태, `OWNER_UID`, `access/owner`, Firebase 사용자 존재·비활성 상태를 확인합니다.

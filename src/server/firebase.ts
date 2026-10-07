@@ -1,4 +1,5 @@
-import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
+import { getApps, initializeApp } from "firebase-admin/app";
+import { serverCredential } from "./credentials";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 export function admin() {
@@ -13,12 +14,14 @@ export function admin() {
     throw new Error("demo 프로젝트에는 Emulator가 필요합니다");
   if (process.env.FIRESTORE_EMULATOR_HOST && !projectId.startsWith("demo-"))
     throw new Error("Emulator는 demo 프로젝트만 허용합니다");
+  if (process.env.FIRESTORE_EMULATOR_HOST && process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
+    throw new Error("Emulator에 운영 서버 자격증명을 설정할 수 없습니다");
   const app =
     getApps()[0] ||
     initializeApp({
       projectId,
       ...(!process.env.FIRESTORE_EMULATOR_HOST
-        ? { credential: applicationDefault() }
+        ? { credential: serverCredential(projectId, process.env.FIREBASE_SERVICE_ACCOUNT_JSON) }
         : {}),
     });
   return { db: getFirestore(app), auth: getAuth(app) };

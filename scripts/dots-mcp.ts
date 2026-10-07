@@ -1,9 +1,13 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createBridgeCall, createDotsMcp } from "../src/integrations/dots-mcp";
 try {
+  const productionOrigin = process.env.MORU_DOTS_PRODUCTION_ORIGIN;
+  if (!!productionOrigin !== !!process.env.MORU_DOTS_PRODUCTION_TOKEN)
+    throw new Error("운영 origin과 운영 연결 키를 함께 설정하세요");
   const call = createBridgeCall(
-    process.env.APP_ORIGIN || "http://localhost:3000",
-    process.env.MORU_DOTS_TOKEN || "",
+    productionOrigin || process.env.APP_ORIGIN || "http://localhost:3000",
+    (productionOrigin ? process.env.MORU_DOTS_PRODUCTION_TOKEN : process.env.MORU_DOTS_TOKEN) || "",
+    productionOrigin,
   );
   const server = createDotsMcp(call);
   await server.connect(new StdioServerTransport());
