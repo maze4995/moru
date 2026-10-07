@@ -44,6 +44,7 @@ import TodaySchedule from "./TodaySchedule";
 import DashboardPlans from "./DashboardPlans";
 import {
   dashboardPeriod,
+  executionLabel,
   type DashboardPeriod,
 } from "@/domain/dashboard-period";
 const nav = [
@@ -268,14 +269,7 @@ export default function Dashboard() {
             >
               {t.category}
             </span>
-            {t.startAt && (
-              <span>
-                {DateTime.fromISO(t.startAt)
-                  .setZone(zone)
-                  .toFormat("M/d HH:mm")}
-                –{DateTime.fromISO(t.endAt!).setZone(zone).toFormat("HH:mm")}
-              </span>
-            )}
+            {t.startAt && <span>{executionLabel(t, zone)}</span>}
             {t.dueDate && (
               <span
                 className={t.dueDate < today && active(t) ? "overdue-text" : ""}
@@ -642,6 +636,10 @@ export default function Dashboard() {
                     )}
                     <DashboardPlans
                       groups={periodView.groups}
+                      zone={zone}
+                      onTask={(task) =>
+                        setEditor({ kind: "tasks", item: task })
+                      }
                       label={periodLabel}
                       onOpen={(plan) => {
                         setTab("plans");

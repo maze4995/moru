@@ -163,7 +163,7 @@ describe("today circular schedule", () => {
   });
 });
 
-import { dashboardPeriod } from "../src/domain/dashboard-period";
+import { dashboardPeriod, executionLabel } from "../src/domain/dashboard-period";
 
 describe("dashboard today/week selection", () => {
   const meta = { uid: "owner", version: 1, updatedAt: "2026-10-07T00:00:00Z" };
@@ -288,4 +288,13 @@ describe("dashboard today/week selection", () => {
     expect(view.end.diff(view.start, "hours").hours).toBe(25);
     expect(view.items.map((x) => x.id)).toEqual(["last-hour"]);
   });
+});
+
+it("groups independent work in chronological order and labels overnight execution with both dates", () => {
+ const base = {...blankTask, uid:"owner", version:1, updatedAt:""};
+ const early: Task = {...base,id:"early",title:"early",category:"생활",startAt:"2026-10-08T15:00:00+09:00",endAt:"2026-10-08T16:00:00+09:00"};
+ const later: Task = {...early,id:"later",title:"later",startAt:"2026-10-08T17:00:00+09:00",endAt:"2026-10-09T13:00:00+09:00"};
+ const view=dashboardPeriod([later,early],[],"Asia/Seoul",Date.parse("2026-10-07T03:00:00Z"),"week");
+ expect(view.groups[4].tasks.map(t=>t.id)).toEqual(["early","later"]);
+ expect(executionLabel(later,"Asia/Seoul")).toBe("10/8 17:00–10/9 13:00");
 });

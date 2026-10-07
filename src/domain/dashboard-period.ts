@@ -34,11 +34,15 @@ export function dashboardPeriod(
       .sort()[0] || "9999";
   const sortTasks = (a: Task, b: Task) =>
     dateKey(a).localeCompare(dateKey(b)) ||
+    (a.startAt && b.startAt
+      ? Date.parse(a.startAt) - Date.parse(b.startAt)
+      : 0) ||
     Number(b.priority === "높음") - Number(a.priority === "높음") ||
     a.title.localeCompare(b.title, "ko");
   const items = actionable.filter(inPeriod).sort(sortTasks);
   const groups = categories.map((category) => ({
     category,
+    tasks: items.filter((t) => !t.planId && t.category === category),
     plans: plans
       .filter(
         (p) => !p.deleted && p.status === "진행 중" && p.category === category,
@@ -71,4 +75,11 @@ export function dashboardPeriod(
     deadlines: actionable.filter((t) => inDates(t.dueDate)),
     planCount: groups.reduce((sum, g) => sum + g.plans.length, 0),
   };
+}
+
+export function executionLabel(task: Task, zone: string) {
+  if (!task.startAt || !task.endAt) return "";
+  const start = DateTime.fromISO(task.startAt).setZone(zone),
+    end = DateTime.fromISO(task.endAt).setZone(zone);
+  return `${start.toFormat("M/d HH:mm")}–${end.toFormat(start.toISODate() === end.toISODate() ? "HH:mm" : "M/d HH:mm")}`;
 }
